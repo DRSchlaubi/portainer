@@ -3,9 +3,12 @@ package system
 import (
 	"net/http"
 	"regexp"
+	"slices"
 
 	portainer "github.com/portainer/portainer/api"
+	"github.com/portainer/portainer/api/internal/upgrade"
 	"github.com/portainer/portainer/api/platform"
+	plf "github.com/portainer/portainer/api/platform"
 	httperror "github.com/portainer/portainer/pkg/libhttp/error"
 	"github.com/portainer/portainer/pkg/libhttp/request"
 	"github.com/portainer/portainer/pkg/libhttp/response"
@@ -31,10 +34,9 @@ func (payload *systemUpgradePayload) Validate(r *http.Request) error {
 	return nil
 }
 
-var platformToEndpointType = map[platform.ContainerPlatform]portainer.EndpointType{
-	platform.PlatformDockerStandalone: portainer.DockerEnvironment,
-	platform.PlatformDockerSwarm:      portainer.DockerEnvironment,
-	platform.PlatformKubernetes:       portainer.KubernetesLocalEnvironment,
+var platformToEndpointType = map[platform.ContainerPlatform][]portainer.EndpointType{
+	platform.PlatformDocker:     {portainer.AgentOnDockerEnvironment, portainer.DockerEnvironment},
+	platform.PlatformKubernetes: {portainer.KubernetesLocalEnvironment},
 }
 
 // @id systemUpgrade
@@ -65,14 +67,9 @@ func (handler *Handler) systemUpgrade(w http.ResponseWriter, r *http.Request) *h
 }
 
 func (handler *Handler) guessLocalEndpoint() (*portainer.Endpoint, error) {
-	platform, err := platform.DetermineContainerPlatform()
+	platform, err := plf.DetermineContainerPlatform()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to determine container platform")
-	}
-
-	endpointType, ok := platformToEndpointType[platform]
-	if !ok {
-		return nil, errors.New("failed to determine endpoint type")
 	}
 
 	endpoints, err := handler.dataStore.Endpoint().Endpoints()
@@ -80,9 +77,16 @@ func (handler *Handler) guessLocalEndpoint() (*portainer.Endpoint, error) {
 		return nil, errors.Wrap(err, "failed to retrieve endpoints")
 	}
 
+	endpointTypes, ok := platformToEndpointType[platform]
+	if !ok {
+		return nil, errors.New("failed to determine endpoint type")
+	}
+
 	for _, endpoint := range endpoints {
-		if endpoint.Type == endpointType {
-			return &endpoint, nil
+		if slices.Contains(endpointTypes, endpoint.Type) {
+			if platform != plf.PlatformDocker || upgrade.CheckDockerEnvTypeForUpgrade(&endpoint) != "" {
+				return &endpoint, nil
+			}
 		}
 	}
 

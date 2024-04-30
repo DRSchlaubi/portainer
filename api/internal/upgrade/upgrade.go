@@ -5,7 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	portainer "github.com/portainer/portainer/api"
-	"github.com/portainer/portainer/api/kubernetes/cli"
+	dockerclient "github.com/portainer/portainer/api/docker/client"
+	kubecli "github.com/portainer/portainer/api/kubernetes/cli"
 	"github.com/portainer/portainer/api/platform"
 	"github.com/portainer/portainer/pkg/libstack"
 )
@@ -30,8 +31,10 @@ type Service interface {
 }
 
 type service struct {
-	composeDeployer         libstack.Deployer
-	kubernetesClientFactory *cli.ClientFactory
+	composeDeployer           libstack.Deployer
+	kubernetesClientFactory   *kubecli.ClientFactory
+	dockerClientFactory       *dockerclient.ClientFactory
+	dockerComposeStackManager portainer.ComposeStackManager
 
 	isUpdating bool
 	platform   platform.ContainerPlatform
@@ -42,7 +45,10 @@ type service struct {
 func NewService(
 	assetsPath string,
 	composeDeployer libstack.Deployer,
-	kubernetesClientFactory *cli.ClientFactory,
+	kubernetesClientFactory *kubecli.ClientFactory,
+	dockerClientFactory *dockerclient.ClientFactory,
+	dockerComposeStackManager portainer.ComposeStackManager,
+
 ) (Service, error) {
 	platform, err := platform.DetermineContainerPlatform()
 	if err != nil {
@@ -50,10 +56,12 @@ func NewService(
 	}
 
 	return &service{
-		assetsPath:              assetsPath,
-		composeDeployer:         composeDeployer,
-		kubernetesClientFactory: kubernetesClientFactory,
-		platform:                platform,
+		assetsPath:                assetsPath,
+		composeDeployer:           composeDeployer,
+		kubernetesClientFactory:   kubernetesClientFactory,
+		dockerClientFactory:       dockerClientFactory,
+		dockerComposeStackManager: dockerComposeStackManager,
+		platform:                  platform,
 	}, nil
 }
 
@@ -61,10 +69,8 @@ func (service *service) Upgrade(environment *portainer.Endpoint, licenseKey stri
 	service.isUpdating = true
 
 	switch service.platform {
-	case platform.PlatformDockerStandalone:
-		return service.upgradeDocker(licenseKey, portainer.APIVersion, "standalone")
-	case platform.PlatformDockerSwarm:
-		return service.upgradeDocker(licenseKey, portainer.APIVersion, "swarm")
+	case platform.PlatformDocker:
+		return service.upgradeDocker(environment, licenseKey, portainer.APIVersion)
 	case platform.PlatformKubernetes:
 		return service.upgradeKubernetes(environment, licenseKey, portainer.APIVersion)
 	}

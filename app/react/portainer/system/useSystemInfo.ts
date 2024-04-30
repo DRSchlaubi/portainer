@@ -8,11 +8,7 @@ import { queryKeys } from './query-keys';
 
 export const queryKey = [...queryKeys.base(), 'info'] as const;
 
-export type ContainerPlatform =
-  | 'Docker Standalone'
-  | 'Docker Swarm'
-  | 'Kubernetes'
-  | 'Podman';
+export type ContainerPlatform = 'Docker' | 'Kubernetes' | 'Podman';
 
 export interface SystemInfoResponse {
   platform: ContainerPlatform;

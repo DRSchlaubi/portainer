@@ -36,7 +36,7 @@ angular
       url: '/new',
       views: {
         'content@': {
-          component: 'createEdgeGroupView',
+          component: 'edgeGroupsCreateView',
         },
       },
     };

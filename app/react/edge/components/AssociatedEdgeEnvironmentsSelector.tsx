@@ -41,7 +41,7 @@ export function AssociatedEdgeEnvironmentsSelector({
           <div className="w-1/2">
             <EdgeGroupAssociationTable
               title="Associated environments"
-              emptyContentLabel="No associated environment'"
+              emptyContentLabel="No associated environment"
               query={{
                 types: EdgeTypes,
                 endpointIds: value,

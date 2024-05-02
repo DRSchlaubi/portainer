@@ -42,13 +42,13 @@ export function EdgeGroupAssociationTable({
   title,
   query,
   emptyContentLabel,
-  onClickRow,
+  onClickRow = () => {},
   'data-cy': dataCy,
 }: {
   title: string;
   query: EnvironmentsQueryParams;
   emptyContentLabel: string;
-  onClickRow: (env: Environment) => void;
+  onClickRow?: (env: Environment) => void;
 } & AutomationTestingProps) {
   const tableState = useTableStateWithoutStorage('Name');
   const [page, setPage] = useState(0);

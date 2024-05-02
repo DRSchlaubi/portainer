@@ -6,17 +6,18 @@ import { withReactQuery } from '@/react-tools/withReactQuery';
 import { withUIRouter } from '@/react-tools/withUIRouter';
 import { WaitingRoomView } from '@/react/edge/edge-devices/WaitingRoomView';
 import { ListView as EdgeStacksListView } from '@/react/edge/edge-stacks/ListView';
-import { ListView as EdgeGroupsListView } from '@/react/edge/edge-groups/ListView';
 
 import { templatesModule } from './templates';
 import { jobsModule } from './jobs';
 import { stacksModule } from './edge-stacks';
+import { groupsModule } from './groups';
 
 export const viewsModule = angular
   .module('portainer.edge.react.views', [
     templatesModule,
     jobsModule,
     stacksModule,
+    groupsModule,
   ])
   .component(
     'waitingRoomView',
@@ -25,8 +26,4 @@ export const viewsModule = angular
   .component(
     'edgeStacksView',
     r2a(withUIRouter(withCurrentUser(EdgeStacksListView)), [])
-  )
-  .component(
-    'edgeGroupsView',
-    r2a(withUIRouter(withCurrentUser(EdgeGroupsListView)), [])
   ).name;
